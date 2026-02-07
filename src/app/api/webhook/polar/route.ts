@@ -4,19 +4,16 @@ import { createAdminClient } from "@/utils/supabase/admin";
 
 const webhookSecret = process.env.POLAR_WEBHOOK_SECRET;
 
-// اگر webhook secret موجود نباشد، یک handler ساده برمی‌گردانیم
-if (!webhookSecret) {
-	// در build time خطا نمی‌دهیم، فقط یک handler خالی برمی‌گردانیم
-	export const POST = async () => {
-		return new Response(
-			JSON.stringify({ error: "Polar webhook is not configured" }),
-			{
-				status: 503,
-				headers: { "Content-Type": "application/json" },
-			}
-		);
-	};
-} else {
+// Handler ساده برای زمانی که webhook secret موجود نیست
+const fallbackHandler = async () => {
+	return new Response(
+		JSON.stringify({ error: "Polar webhook is not configured" }),
+		{
+			status: 503,
+			headers: { "Content-Type": "application/json" },
+		}
+	);
+};
 
 const findUserByEmail = async (supabase: any, email: string) => {
 	const { data: userData, error: lookupError } = await supabase
@@ -83,10 +80,8 @@ const sendThankYouEmail = async (email: string, customerName?: string) => {
 	}
 };
 
-export const POST = Webhooks({
-	webhookSecret,
-
-	onOrderPaid: async (payload) => {
+// تعریف handlerها
+const onOrderPaid = async (payload: any) => {
 		if (payload.data.status !== "paid" || payload.data.paid !== true) {
 			console.warn("❌ Payment not completed. Skipping premium update.");
 			return;
@@ -119,12 +114,12 @@ export const POST = Webhooks({
 					sanitizeString(payload.data.customer?.name || "")
 				);
 			}
-		} catch (error) {
-			console.error("❌ Error processing payment completion:", error);
-		}
-	},
+	} catch (error) {
+		console.error("❌ Error processing payment completion:", error);
+	}
+};
 
-	onSubscriptionCreated: async (payload) => {
+const onSubscriptionCreated = async (payload: any) => {
 		try {
 			const supabase = createAdminClient();
 			const customerEmail = sanitizeString(payload.data.customer?.email || "");
@@ -152,12 +147,12 @@ export const POST = Webhooks({
 					sanitizeString(payload.data.customer?.name || "")
 				);
 			}
-		} catch (error) {
-			console.error("❌ Error processing subscription creation:", error);
-		}
-	},
+	} catch (error) {
+		console.error("❌ Error processing subscription creation:", error);
+	}
+};
 
-	onSubscriptionActive: async (payload) => {
+const onSubscriptionActive = async (payload: any) => {
 		try {
 			const supabase = createAdminClient();
 			const customerEmail = sanitizeString(payload.data.customer?.email || "");
@@ -181,12 +176,12 @@ export const POST = Webhooks({
 
 			if (updatedUser) {
 			}
-		} catch (error) {
-			console.error("❌ Error processing subscription activation:", error);
-		}
-	},
+	} catch (error) {
+		console.error("❌ Error processing subscription activation:", error);
+	}
+};
 
-	onSubscriptionUpdated: async (payload) => {
+const onSubscriptionUpdated = async (payload: any) => {
 		try {
 			const supabase = createAdminClient();
 			const customerEmail = sanitizeString(payload.data.customer?.email || "");
@@ -214,12 +209,12 @@ export const POST = Webhooks({
 
 			if (updatedUser) {
 			}
-		} catch (error) {
-			console.error("❌ Error processing subscription update:", error);
-		}
-	},
+	} catch (error) {
+		console.error("❌ Error processing subscription update:", error);
+	}
+};
 
-	onSubscriptionRevoked: async (payload) => {
+const onSubscriptionRevoked = async (payload: any) => {
 		try {
 			const supabase = createAdminClient();
 			const customerEmail = sanitizeString(payload.data.customer?.email || "");
@@ -241,12 +236,12 @@ export const POST = Webhooks({
 
 			if (updatedUser) {
 			}
-		} catch (error) {
-			console.error("❌ Error processing subscription revocation:", error);
-		}
-	},
+	} catch (error) {
+		console.error("❌ Error processing subscription revocation:", error);
+	}
+};
 
-	onSubscriptionCanceled: async (payload) => {
+const onSubscriptionCanceled = async (payload: any) => {
 		try {
 			const supabase = createAdminClient();
 			const customerEmail = sanitizeString(payload.data.customer?.email || "");
@@ -274,10 +269,20 @@ export const POST = Webhooks({
 
 			if (updatedUser) {
 			}
-		} catch (error) {
-			console.error("❌ Error processing subscription cancellation:", error);
-		}
-	},
-});
+	} catch (error) {
+		console.error("❌ Error processing subscription cancellation:", error);
+	}
+};
 
-}
+// اگر webhook secret موجود نباشد، یک handler ساده export می‌کنیم
+export const POST = webhookSecret
+	? Webhooks({
+			webhookSecret,
+			onOrderPaid,
+			onSubscriptionCreated,
+			onSubscriptionActive,
+			onSubscriptionUpdated,
+			onSubscriptionRevoked,
+			onSubscriptionCanceled,
+		})
+	: fallbackHandler;
