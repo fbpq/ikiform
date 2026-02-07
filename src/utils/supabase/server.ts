@@ -9,9 +9,32 @@ export async function createClient() {
 	const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 	const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+	// اگر متغیرهای محیطی موجود نباشند، یک client dummy می‌سازیم
+	// که در runtime خطا می‌دهد اما در build time مشکلی ایجاد نمی‌کند
 	if (!(supabaseUrl && supabaseAnonKey)) {
-		throw new Error(
-			"Missing Supabase environment variables. Please check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+		console.warn(
+			"Missing Supabase environment variables. Using dummy client. Please check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+		);
+		// استفاده از مقادیر dummy برای جلوگیری از خطا در build time
+		return createServerClient(
+			supabaseUrl || "https://dummy.supabase.co",
+			supabaseAnonKey || "dummy-key",
+			{
+				cookies: {
+					getAll() {
+						return cookieStore.getAll();
+					},
+					setAll(cookiesToSet) {
+						try {
+							for (const { name, value, options } of cookiesToSet) {
+								cookieStore.set(name, value, options);
+							}
+						} catch {
+							// Ignore cookie setting errors
+						}
+					},
+				},
+			}
 		);
 	}
 
