@@ -22,6 +22,10 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Copy .env.local if it exists (for build-time environment variables)
+# Next.js needs NEXT_PUBLIC_* variables at build time
+COPY .env.local* ./
+
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
