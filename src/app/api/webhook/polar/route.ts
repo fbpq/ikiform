@@ -3,9 +3,20 @@ import { sanitizeString } from "@/lib/utils/sanitize";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 const webhookSecret = process.env.POLAR_WEBHOOK_SECRET;
+
+// اگر webhook secret موجود نباشد، یک handler ساده برمی‌گردانیم
 if (!webhookSecret) {
-	throw new Error("POLAR_WEBHOOK_SECRET environment variable is not set");
-}
+	// در build time خطا نمی‌دهیم، فقط یک handler خالی برمی‌گردانیم
+	export const POST = async () => {
+		return new Response(
+			JSON.stringify({ error: "Polar webhook is not configured" }),
+			{
+				status: 503,
+				headers: { "Content-Type": "application/json" },
+			}
+		);
+	};
+} else {
 
 const findUserByEmail = async (supabase: any, email: string) => {
 	const { data: userData, error: lookupError } = await supabase
@@ -268,3 +279,5 @@ export const POST = Webhooks({
 		}
 	},
 });
+
+}
