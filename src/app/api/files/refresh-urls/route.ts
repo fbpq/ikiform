@@ -1,6 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { refreshSignedUrls } from "@/lib/storage/supabase-storage";
 
+// این route را dynamic می‌کنیم تا در زمان build اجرا نشود
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
 	try {
 		const { filePaths, expiresIn = 86_400 } = await request.json();

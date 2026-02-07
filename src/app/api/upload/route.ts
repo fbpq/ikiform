@@ -1,6 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { uploadFile } from "@/lib/storage/supabase-storage";
 
+// این route را dynamic می‌کنیم تا در زمان build اجرا نشود
+export const dynamic = "force-dynamic";
+
 const ALLOWED_MIME_TYPES = [
 	"image/jpeg",
 	"image/jpg",

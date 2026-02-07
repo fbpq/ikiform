@@ -1,19 +1,24 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// فقط اگر متغیرهای محیطی موجود باشند، Supabase client را می‌سازیم
+export const supabase =
+	supabaseUrl && supabaseKey
+		? createClient(supabaseUrl, supabaseKey)
+		: null;
 
-export const supabaseAdmin = supabaseServiceKey
-	? createClient(supabaseUrl, supabaseServiceKey, {
-			auth: {
-				autoRefreshToken: false,
-				persistSession: false,
-			},
-		})
-	: null;
+export const supabaseAdmin =
+	supabaseUrl && supabaseServiceKey
+		? createClient(supabaseUrl, supabaseServiceKey, {
+				auth: {
+					autoRefreshToken: false,
+					persistSession: false,
+				},
+			})
+		: null;
 
 export interface FileUploadResult {
 	id: string;
@@ -28,6 +33,10 @@ export async function uploadFile(
 	fieldId: string,
 	submissionId?: string
 ): Promise<FileUploadResult> {
+	if (!supabase) {
+		throw new Error("Supabase is not configured");
+	}
+
 	try {
 		const timestamp = Date.now();
 		const randomId = Math.random().toString(36).substring(2, 15);
@@ -91,6 +100,10 @@ export async function uploadFile(
 }
 
 export async function deleteFile(filePath: string): Promise<void> {
+	if (!supabase) {
+		throw new Error("Supabase is not configured");
+	}
+
 	try {
 		const { error } = await supabase.storage
 			.from("form-files")
@@ -109,6 +122,10 @@ export async function getSignedUrl(
 	filePath: string,
 	expiresIn = 3600
 ): Promise<string> {
+	if (!supabase) {
+		throw new Error("Supabase is not configured");
+	}
+
 	try {
 		const { data, error } = await supabase.storage
 			.from("form-files")
@@ -146,6 +163,10 @@ export async function refreshSignedUrls(
 }
 
 export async function listFiles(folderPath: string) {
+	if (!supabase) {
+		throw new Error("Supabase is not configured");
+	}
+
 	try {
 		const { data, error } = await supabase.storage
 			.from("form-files")
@@ -163,6 +184,10 @@ export async function listFiles(folderPath: string) {
 }
 
 export async function getFileMetadata(filePath: string) {
+	if (!supabase) {
+		throw new Error("Supabase is not configured");
+	}
+
 	try {
 		const { data, error } = await supabase.storage.from("form-files").list("", {
 			search: filePath,
