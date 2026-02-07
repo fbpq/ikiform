@@ -20,11 +20,9 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
+# Copy all files including .env.local (needed for NEXT_PUBLIC_* vars at build time)
+# Note: .env.local is NOT in .dockerignore, so it will be copied
 COPY . .
-
-# Copy .env.local if it exists (for build-time environment variables)
-# Next.js needs NEXT_PUBLIC_* variables at build time
-COPY .env.local* ./
 
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
