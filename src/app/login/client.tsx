@@ -171,7 +171,19 @@ export default function LoginForm() {
 
 	const handleAuth = useCallback(async () => {
 		setLoading(true);
-		const supabase = createClient();
+		let supabase;
+		try {
+			supabase = createClient();
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: "Supabase is not configured. Please check environment variables.";
+			toast.error(errorMessage);
+			setLoading(false);
+			return;
+		}
+
 		try {
 			if (isSignUp) {
 				const { data, error } = await supabase.auth.signUp({
